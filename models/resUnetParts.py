@@ -1,22 +1,24 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torchinfo import summary
 
 
 class ResidualDoubleConv(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(ResidualDoubleConv, self).__init__()
+        self.resconv = nn.Conv2d(in_channels, out_channels, kernel_size=1)
         self.double_conv = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
-            nn.BatchNorm2d(),
+            nn.BatchNorm2d(out_channels),
             nn.ReLU(),
             nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
-            nn.BatchNorm2d(),
+            nn.BatchNorm2d(out_channels),
             nn.ReLU(),
         )
 
     def forward(self, x):
-        residual = x  # Save the input as the residual connection
+        residual = self.resconv(x)  # Save the input as the residual connection
         x = self.double_conv(x)
         x = x + residual  # Add the residual connection
         return x
@@ -74,48 +76,10 @@ class OutConv(nn.Module):
         return self.conv(x)
 
 
-class ResUNet(nn.Module):
-    def __init__(self, n_channels, n_classes, init_filter=64, bilinear=False, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self.n_channels = n_channels
-        self.n_classes = n_classes
-        self.bilinear = bilinear
+if __name__ == '__main__':
+    x = torch.rand(1,3,10,10)
+    resblock = ResidualDoubleConv(3,10)
+    print(resblock(x).size())
+    downcon = ResDown(10,20)
+    print(downcon(resblock(x)).size())
 
-        # Definisi komponen U-Net
-        self.inputTensor = (ResidualDoubleConv(n_channels, init_filter))
-        self.down1 = (ResDown(init_filter, init_filter*2))
-        self.down2 = (ResDown(init_filter*2, init_filter*4))
-        self.down3 = (ResDown(init_filter*4, init_filter*8))
-        factor = 2 if bilinear else 1
-        self.down4 = (ResDown(init_filter*8, init_filter*16 // factor))
-        self.up1 = (ResUp(init_filter*16, init_filter*8 // factor, bilinear))
-        self.up2 = (ResUp(init_filter*8, init_filter*4 // factor, bilinear))
-        self.up3 = (ResUp(init_filter*4, init_filter*2 // factor, bilinear))
-        self.up4 = (ResUp(init_filter*2, init_filter, bilinear))
-        self.outputTensor = (OutConv(init_filter, n_classes))
-
-    def forward(self, x):
-        x1 = self.inputTensor(x)
-        x2 = self.down1(x1)
-        x3 = self.down2(x2)
-        x4 = self.down3(x3)
-        x5 = self.down4(x4)
-        x = self.up1(x5, x4)
-        x = self.up2(x, x3)
-        x = self.up3(x, x2)
-        x = self.up4(x, x1)
-        logits = self.outputTensor(x)
-        return logits
-
-    def use_checkpointing(self):
-        # Menerapkan checkpointing di beberapa lapisan.
-        self.inputTensor = torch.utils.checkpoint(self.inputTensor)
-        self.down1 = torch.utils.checkpoint(self.down1)
-        self.down2 = torch.utils.checkpoint(self.down2)
-        self.down3 = torch.utils.checkpoint(self.down3)
-        self.down4 = torch.utils.checkpoint(self.down4)
-        self.up1 = torch.utils.checkpoint(self.up1)
-        self.up2 = torch.utils.checkpoint(self.up2)
-        self.up3 = torch.utils.checkpoint(self.up3)
-        self.up4 = torch.utils.checkpoint(self.up4)
-        self.outputTensor = torch.utils.checkpoint(self.outputTensor)
