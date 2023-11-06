@@ -16,12 +16,14 @@ class ResidualDoubleConv(nn.Module):
             nn.BatchNorm2d(out_channels),
             nn.ReLU(),
         )
+        self.norm = nn.BatchNorm2d(out_channels)
+        self.activation = nn.ReLU()
 
     def forward(self, x):
         residual = self.resconv(x)  # Save the input as the residual connection
         x = self.double_conv(x)
         x = x + residual  # Add the residual connection
-        return x
+        return self.activation(self.norm(x))
 
 
 class ResDown(nn.Module):

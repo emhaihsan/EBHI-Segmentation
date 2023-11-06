@@ -1,7 +1,7 @@
-from attUnetParts import *
+from .attUnetParts import *
 from torchinfo import summary
 
-class AttUNetModel(nn.Module):
+class AttUNet(nn.Module):
     def __init__(self, n_channels, n_classes, init_filter=64, bilinear=False, residual=False,*args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.n_channels = n_channels
@@ -50,7 +50,7 @@ class AttUNetModel(nn.Module):
 if __name__ == "__main__":
     # Instantiate the model and display the summary
     model = AttUNetModel(n_channels=3, n_classes=7, init_filter=64)
-    summary(model, input_size=(1,3,400,400))
-    resmodel = AttUNetModel(n_channels=3, n_classes=7, init_filter=64, residual=True)
-    summary(resmodel, input_size=(1,3,400,400))
+    summary(model, input_size=(1,3,224,224))
+    # resmodel = AttUNetModel(n_channels=3, n_classes=7, init_filter=64, residual=True)
+    # summary(resmodel, input_size=(1,3,400,400))
 

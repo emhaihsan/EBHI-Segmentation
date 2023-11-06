@@ -1,3 +1,4 @@
+.DS_Store
 EBHI-SEG-Train
 EBHI-SEG-Test
 EBHI-SEG-Val
@@ -5,3 +6,6 @@ querygpt.txt
 teslayer.ipynb
 datasetsplit.zip
 chuaks.ipynb
+aru.ipynb
+resu.ipynb
+atu.ipynb

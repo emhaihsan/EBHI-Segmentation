@@ -1,4 +1,4 @@
-from resUnetParts import *
+from .resUnetParts import *
 
 class ResUNet(nn.Module):
     def __init__(self, n_channels, n_classes, init_filter=64, bilinear=False, *args, **kwargs) -> None:
